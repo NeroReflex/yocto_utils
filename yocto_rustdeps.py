@@ -16,13 +16,21 @@ import os
 import sys
 import tempfile
 import requests
-import toml
+try:
+    import tomllib as toml_reader  # py3.11+
+except ModuleNotFoundError:  # pragma: no cover
+    import toml as toml_reader
 
 CRATES_IO_DL = "https://crates.io/api/v1/crates/{name}/{vers}/download"
 
 def load_lock(path):
-    with open(path, "r", encoding="utf-8") as f:
-        data = toml.load(f)
+    # tomllib requires binary mode, while the external "toml" module expects text.
+    try:
+        with open(path, "rb") as f:
+            data = toml_reader.load(f)
+    except TypeError:
+        with open(path, "r", encoding="utf-8") as f:
+            data = toml_reader.load(f)
     return data.get("package", [])
 
 def unique_packages(pkgs):
